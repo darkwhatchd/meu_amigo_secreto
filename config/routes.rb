@@ -3,26 +3,15 @@
 require 'sidekiq/web'
 
 Rails.application.routes.draw do
-  get 'members/create'
-
-  get 'members/destroy'
-
-  get 'members/update'
-
-  get 'campaigns/show'
-
-  get 'campaigns/index'
-
-  get 'campaigns/create'
-
-  get 'campaigns/update'
-
-  get 'campaigns/destroy'
-
-  get 'campaigns/raffle'
-
-  get 'pages/home'
-
   devise_for :users, controllers: { registrations: 'registrations' }
   mount Sidekiq::Web => '/sidekiq'
+
+  root to: 'pages#home'
+  resources :campaigns, except: [:new] do
+    # Aqui inserimos o /raffle dentro da rota de Campaign
+    post 'raffle', on: :member # Assim ele pega o ID antes: /campaign/:id/raffle
+    # post 'raffle', on: :collection, Desta forma ele não pega o ID: /campaign/raffle
+  end
+  get 'members/:token/opened', to: 'members#opened'
+  resources :members, only: %i[create destroy update]
 end
