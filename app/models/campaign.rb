@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 class Campaign < ApplicationRecord
+  before_validation :set_member, on: :create
+  before_validation :set_status, on: :create
   belongs_to :user
   has_many :members, dependent: :destroy
-  before_create :set_member
-  before_create :set_status
   enum status: %i[pending finished]
   validates :title, :description, :user, :status, presence: true
+
+  private
 
   # Inicia a campanha com o status pendente
   def set_status
