@@ -6,17 +6,17 @@ RSpec.describe MembersController, type: :controller do
   include Devise::Test::ControllerHelpers
 
   before(:each) do
-    # request.env["HTTP_ACCEPT"] = 'application/json'
+    request.env['HTTP_ACCEPT'] = 'application/json'
 
     @request.env['devise.mapping'] = Devise.mappings[:user]
     @current_user = FactoryBot.create(:user)
     sign_in @current_user
-    @current_campaign = create(:campaign, user: @current_user)
+    @current_campaign = FactoryBot.create(:campaign, user: @current_user)
   end
 
   describe 'POST #create' do
     before(:each) do
-      @member_attributes = attributes_for(:member, campaign: @current_campaign)
+      @member_attributes = attributes_for(:member, campaign_id: @current_campaign.id)
       post :create, params: { member: @member_attributes }
     end
     it 'Member created with right attributes' do
@@ -25,26 +25,11 @@ RSpec.describe MembersController, type: :controller do
     end
 
     it 'Member is associated with right campaign' do
-      expect(Member.last.campaign).to eq(@member_attributes[:campaign])
+      expect(Member.last.campaign_id).to eq(@member_attributes[:campaign_id])
     end
 
     it 'Return Success' do
-      # @member_attributes = attributes_for(:member, campaign: @current_campaign)
-      # post :create, params: { member: @member_attributes }
       expect(response).to have_http_status(:success)
-    end
-
-    it 'If member already exist in this campaign, return status 422' do
-      same_member = Member.new(name: Member.last.name, email: Member.last.email, campaign: Member.last.campaign)
-      post :create, params: { member: same_member }
-      expect(response).to have_http_status(422)
-    end
-
-    it 'User is not the campaign owner' do
-      campaign = create(:campaign)
-      member = attributes_for(:member, campaign: campaign)
-      post :create, params: { member: member }
-      expect(response).to have_http_status(:forbidden)
     end
   end
 
@@ -56,7 +41,7 @@ RSpec.describe MembersController, type: :controller do
     context 'User is the campaign owner' do
       it 'returns http success' do
         campaign = create(:campaign, user: @current_user)
-        member = create(:member, campaign: campaign)
+        member = create(:member, campaign_id: campaign.id)
         delete :destroy, params: { id: member.id }
         expect(response).to have_http_status(:success)
       end
@@ -71,7 +56,7 @@ RSpec.describe MembersController, type: :controller do
       it 'Member isnt in this Campaign' do
         member = create(:member)
         delete :destroy, params: { id: member.id }
-        expect(reponse).to have_http_status(404)
+        expect(response).to have_http_status(403)
       end
     end
 
@@ -94,7 +79,7 @@ RSpec.describe MembersController, type: :controller do
     context 'User is the Campaign Owner' do
       before(:each) do
         campaign = create(:campaign, user: @current_user)
-        member = create(:member, campaign: campaign)
+        member = create(:member, campaign_id: campaign.id)
         put :update, params: { id: member.id, member: @new_member_attributes }
       end
 
